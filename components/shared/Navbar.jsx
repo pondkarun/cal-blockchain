@@ -5,7 +5,7 @@ const Navbar = (proos) => {
     <AppBar position="static">
       <Toolbar>
         <IconButton edge="start" color="inherit" aria-label="menu"></IconButton>
-        <Typography variant="h6">Blockchain</Typography>
+        <Typography variant="h6">Blockchain (Simulate)</Typography>
       </Toolbar>
     </AppBar>
   );
