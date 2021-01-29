@@ -1,11 +1,8 @@
 import { useState } from "react";
-import { getCrypto } from "../../service";
 
-const Symbol = () => {
+const Symbol = ({ cryptoList }) => {
+  console.log("cryptoList :>> ", cryptoList);
 
-  getCrypto().then((res) => {
-    console.log("res :>> ", res.data.items);
-  });
   return (
     <>
       <div>sdsd</div>
