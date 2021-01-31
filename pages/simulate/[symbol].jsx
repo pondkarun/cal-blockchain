@@ -1,7 +1,8 @@
-import Head from 'next/head'
-import { useState } from "react";
-import Layout from "../components/Layout";
-import { Skeleton } from '@material-ui/lab';
+import Head from "next/head";
+import { useState, useEffect } from "react";
+import Layout from "../../components/Layout";
+import { Skeleton } from "@material-ui/lab";
+import { useRouter } from "next/router";
 
 import {
   Grid,
@@ -18,11 +19,36 @@ import {
   TableRow,
   Paper,
   TextField,
-  MenuItem
+  MenuItem,
 } from "@material-ui/core";
 
-
 export default function Home() {
+  const router = useRouter();
+  const [trade, setTrade] = useState(0);
+
+  
+  useEffect(() => {
+    console.log("router :>> ", router.query);
+    connectBinanceSocket(router.query)
+  }, []);
+
+
+  const stopconnect = () => {
+    const binanceSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${router.query.symbol}@trade`);
+    binanceSocket.onclose = function(evt) {
+      onClose(evt)
+   };
+  }
+
+  const connectBinanceSocket = ({ symbol }) => {
+    const binanceSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
+    binanceSocket.onmessage = (event) => {
+      const jsonData = JSON.parse(event.data)
+      console.log(jsonData.p)
+      setTrade(jsonData.p)
+    }
+
+  };
 
 
   const [modelSave, setModelSave] = useState({
@@ -39,29 +65,36 @@ export default function Home() {
   const [currencies, setCurrencies] = useState([
     {
       value: 1,
-      label: 'Basic',
+      label: "Basic",
     },
-  ])
+  ]);
 
   const calculate = () => {
     // console.log('modelSave :>> ', modelSave);
-    const tempDate = []
-    let sum = 0
+    const tempDate = [];
+    let sum = 0;
     if (modelSave.type === 1) {
-      const vat = 0.25 / 100 //ค่าธรรมเนียม 0.25%
-      const rate = (modelSave.rate_end - modelSave.rate_start) / modelSave.number //เรทที่ลดลง แต่ละไม้
-      const cost = Number((modelSave.amount / modelSave.number).toFixed(2)) //ทุน
-      const vatCost = Number((cost * vat).toFixed(2)) //ค่าธรรมเนียม 0.25% ซื้อ
+      const vat = 0.25 / 100; //ค่าธรรมเนียม 0.25%
+      const rate =
+        (modelSave.rate_end - modelSave.rate_start) / modelSave.number; //เรทที่ลดลง แต่ละไม้
+      const cost = Number((modelSave.amount / modelSave.number).toFixed(2)); //ทุน
+      const vatCost = Number((cost * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ซื้อ
 
       for (let x = 0; x < modelSave.number; x++) {
-
-        const buyPrice = Number(((x === 0) ? modelSave.rate_end - rate : tempDate[x - 1].buyPrice - rate).toFixed(2)); //คำนวณ ชื้อราคา
+        const buyPrice = Number(
+          (x === 0
+            ? modelSave.rate_end - rate
+            : tempDate[x - 1].buyPrice - rate
+          ).toFixed(2)
+        ); //คำนวณ ชื้อราคา
         const amount = Number(((cost - vatCost) / buyPrice).toFixed(8)); //คำนวณ จำนวน
-        const sellPrice = Number((buyPrice + ((buyPrice * modelSave.profit) / 100)).toFixed(2)); //คำนวณ ราคาขาย
+        const sellPrice = Number(
+          (buyPrice + (buyPrice * modelSave.profit) / 100).toFixed(2)
+        ); //คำนวณ ราคาขาย
 
-        const vatSellPrice = Number(((amount * sellPrice) * vat).toFixed(2)) //ค่าธรรมเนียม 0.25% ขาย
-        const sales = Number(((amount * sellPrice) - vatSellPrice).toFixed(2)) //คำนวณ ยอดขาย
-        const profit = Number(sales - cost).toFixed(2)//คำนวณ กำไร
+        const vatSellPrice = Number((amount * sellPrice * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ขาย
+        const sales = Number((amount * sellPrice - vatSellPrice).toFixed(2)); //คำนวณ ยอดขาย
+        const profit = Number(sales - cost).toFixed(2); //คำนวณ กำไร
         tempDate.push({
           num: x + 1, //ไม้
           buyPrice, //ชื้อราคา
@@ -70,18 +103,14 @@ export default function Home() {
           sellPrice, //ราคาขาย
           sales, //ยอดขาย
           profit, //กำไร
-        })
-        sum = sum + Number(profit)
-
+        });
+        sum = sum + Number(profit);
       }
-
     }
 
-    setSumProfit((sum).toLocaleString("en-US", { minimumFractionDigits: 2 }))
-    setRows(tempDate)
-
-  }
-
+    setSumProfit(sum.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+    setRows(tempDate);
+  };
 
   return (
     <Layout>
@@ -89,19 +118,17 @@ export default function Home() {
         <title>จำลอง คำนวณไม้</title>
       </Head>
       <form noValidate autoComplete="off" style={{ paddingBottom: 25 }}>
-
         <Grid container spacing={3}>
-
+          <Grid item md={4}></Grid>
           <Grid item md={4}>
-          </Grid>
-          <Grid item md={4}>
-
             <TextField
               id="standard-select-currency"
               select
               label="ประเภท"
               value={modelSave.type}
-              onChange={(event) => { setModelSave({ ...modelSave, type: event.target.value }); }}
+              onChange={(event) => {
+                setModelSave({ ...modelSave, type: event.target.value });
+              }}
               fullWidth
               style={{ paddingBottom: 5 }}
             >
@@ -118,8 +145,12 @@ export default function Home() {
                 id="standard-adornment-amount"
                 type="number"
                 value={modelSave.amount}
-                onChange={(event) => { setModelSave({ ...modelSave, amount: event.target.value }); }}
-                startAdornment={<InputAdornment position="start">฿</InputAdornment>}
+                onChange={(event) => {
+                  setModelSave({ ...modelSave, amount: event.target.value });
+                }}
+                startAdornment={
+                  <InputAdornment position="start">฿</InputAdornment>
+                }
               />
             </FormControl>
 
@@ -129,46 +160,74 @@ export default function Home() {
                 id="standard-adornment-amount"
                 type="number"
                 value={modelSave.number}
-                onChange={(event) => { setModelSave({ ...modelSave, number: event.target.value }); }}
-                startAdornment={<InputAdornment position="start"> </InputAdornment>}
+                onChange={(event) => {
+                  setModelSave({ ...modelSave, number: event.target.value });
+                }}
+                startAdornment={
+                  <InputAdornment position="start"> </InputAdornment>
+                }
               />
             </FormControl>
 
             <Grid container spacing={3} style={{ paddingBottom: 10 }}>
               <Grid item md={6}>
                 <FormControl fullWidth style={{ paddingBottom: 7 }}>
-                  <InputLabel htmlFor="standard-adornment-amount">เรทเริ่มต้น</InputLabel>
+                  <InputLabel htmlFor="standard-adornment-amount">
+                    เรทเริ่มต้น
+                  </InputLabel>
                   <Input
                     id="standard-adornment-amount"
                     type="number"
                     value={modelSave.rate_start}
-                    onChange={(event) => { setModelSave({ ...modelSave, rate_start: event.target.value }); }}
-                    startAdornment={<InputAdornment position="start"> </InputAdornment>}
+                    onChange={(event) => {
+                      setModelSave({
+                        ...modelSave,
+                        rate_start: event.target.value,
+                      });
+                    }}
+                    startAdornment={
+                      <InputAdornment position="start"> </InputAdornment>
+                    }
                   />
                 </FormControl>
               </Grid>
               <Grid item md={6}>
                 <FormControl fullWidth style={{ paddingBottom: 7 }}>
-                  <InputLabel htmlFor="standard-adornment-amount">ถึง</InputLabel>
+                  <InputLabel htmlFor="standard-adornment-amount">
+                    ถึง
+                  </InputLabel>
                   <Input
                     id="standard-adornment-amount"
                     type="number"
                     value={modelSave.rate_end}
-                    onChange={(event) => { setModelSave({ ...modelSave, rate_end: event.target.value }); }}
-                    startAdornment={<InputAdornment position="start"> </InputAdornment>}
+                    onChange={(event) => {
+                      setModelSave({
+                        ...modelSave,
+                        rate_end: event.target.value,
+                      });
+                    }}
+                    startAdornment={
+                      <InputAdornment position="start"> </InputAdornment>
+                    }
                   />
                 </FormControl>
               </Grid>
             </Grid>
 
             <FormControl fullWidth style={{ paddingBottom: 7 }}>
-              <InputLabel htmlFor="standard-adornment-amount">กำไร (%)</InputLabel>
+              <InputLabel htmlFor="standard-adornment-amount">
+                กำไร (%)
+              </InputLabel>
               <Input
                 id="standard-adornment-amount"
                 type="number"
                 value={modelSave.profit}
-                onChange={(event) => { setModelSave({ ...modelSave, profit: event.target.value }); }}
-                startAdornment={<InputAdornment position="start"> </InputAdornment>}
+                onChange={(event) => {
+                  setModelSave({ ...modelSave, profit: event.target.value });
+                }}
+                startAdornment={
+                  <InputAdornment position="start"> </InputAdornment>
+                }
               />
             </FormControl>
 
@@ -177,18 +236,25 @@ export default function Home() {
                 คำนวณ
               </Button>
             </div>
-
+            <div style={{ textAlign: "center" }}>
+              <Button variant="contained" color="primary" onClick={stopconnect}>
+                Connect
+              </Button>
+            </div>
           </Grid>
-          <Grid item md={4}>
-          </Grid>
-
+          <Grid item md={4}></Grid>
         </Grid>
-
       </form>
 
-      <h3 align="right"> {rows.length > 0 ? `รวมกำไร (ประมาณ) : ${sumProfit.toLocaleString('en')} บาท` : null} </h3>
-      <TableContainer component={Paper} >
-        <Table size="small" aria-label="a dense table" >
+      <h3>{trade}</h3>
+      <h3 align="right">
+        {" "}
+        {rows.length > 0
+          ? `รวมกำไร (ประมาณ) : ${sumProfit.toLocaleString("en")} บาท`
+          : null}{" "}
+      </h3>
+      <TableContainer component={Paper}>
+        <Table size="small" aria-label="a dense table">
           <TableHead>
             <TableRow>
               <TableCell align="center">ไม้</TableCell>
@@ -225,22 +291,24 @@ export default function Home() {
                   <Skeleton />
                 </TableCell>
               </TableRow>
-            ) : rows.map((row) => (
-              <TableRow key={row.num}>
-                <TableCell align="center">{row.num}</TableCell>
-                <TableCell align="center">{row.buyPrice}</TableCell>
-                <TableCell align="center">{row.cost}</TableCell>
-                <TableCell align="center">{row.amount}</TableCell>
-                <TableCell align="center">{row.sellPrice}</TableCell>
-                <TableCell align="center">{row.sales}</TableCell>
-                <TableCell align="center">{row.profit}</TableCell>
-              </TableRow>
-            ))}
-
+            ) : (
+                rows.map((row) => (
+                  <TableRow key={row.num}>
+                    <TableCell align="center">{row.num}</TableCell>
+                    <TableCell align="center">{row.buyPrice}</TableCell>
+                    <TableCell align="center">{row.cost}</TableCell>
+                    <TableCell align="center">{row.amount}</TableCell>
+                    <TableCell align="center">{row.sellPrice}</TableCell>
+                    <TableCell align="center">{row.sales}</TableCell>
+                    <TableCell align="center">{row.profit}</TableCell>
+                  </TableRow>
+                ))
+              )}
           </TableBody>
         </Table>
       </TableContainer>
-      <br /><br />
-    </Layout >
+      <br />
+      <br />
+    </Layout>
   );
 }
