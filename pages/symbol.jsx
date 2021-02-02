@@ -6,7 +6,7 @@ export default function Home({ cryptoList }) {
   return (
     <Layout>
       <Head>
-        <title>จำลอง คำนวณไม้</title>
+        <title>เลือกเหรียญ</title>
       </Head>
       <Symbol cryptoList={cryptoList} />
       <br />

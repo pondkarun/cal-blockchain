@@ -16,9 +16,8 @@ const Symbol = ({ cryptoList }) => {
                 {index + 1}. {e.crypto_name} ({e.crypto_initials})
                 </div>
               <div className="col-2 ">
-                <button type="button" className="btn btn-primary btn-sm" disabled={true}>เลือก</button>
                 <Link href={`simulate/${e.crypto_initials.toLowerCase()}usdt`}>
-                  <button type="button" className="btn btn-link btn-sm">จำลอง</button>
+                  <button type="button" className="btn btn-primary btn-sm" >จำลอง</button>
                 </Link>
               </div>
             </div>

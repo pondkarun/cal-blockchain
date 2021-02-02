@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Skeleton } from "@material-ui/lab";
 
@@ -20,7 +19,8 @@ import {
   MenuItem,
 } from "@material-ui/core";
 
-const symbol = () => {
+const Simulate = ({ symbol }) => {
+  console.log("symbol :>> ", symbol);
   const [modelSave, setModelSave] = useState({
     type: 1,
     amount: 10000,
@@ -44,7 +44,7 @@ const symbol = () => {
     const tempDate = [];
     let sum = 0;
     if (modelSave.type === 1) {
-      const vat = 0.25 / 100; //ค่าธรรมเนียม 0.25%
+      const vat = 0.1 / 100; //ค่าธรรมเนียม 0.25%
       const rate =
         (modelSave.rate_end - modelSave.rate_start) / modelSave.number; //เรทที่ลดลง แต่ละไม้
       const cost = Number((modelSave.amount / modelSave.number).toFixed(2)); //ทุน
@@ -70,9 +70,9 @@ const symbol = () => {
           buyPrice, //ชื้อราคา
           cost, //ทุน
           amount, //จำนวน
-          sellPrice, //ราคาขาย
-          sales, //ยอดขาย
-          profit, //กำไร
+          sellPrice: null, //ราคาขาย
+          sales: null, //ยอดขาย
+          profit: null, //กำไร
         });
         sum = sum + Number(profit);
       }
@@ -208,12 +208,15 @@ const symbol = () => {
         </Grid>
       </form>
 
-      <h3 align="right">
+      {/* <h3 align="right">
         {" "}
         {rows.length > 0
           ? `รวมกำไร (ประมาณ) : ${sumProfit.toLocaleString("en")} บาท`
           : null}{" "}
-      </h3>
+      </h3> */}
+      <div row="row">
+        
+      </div>
       <TableContainer component={Paper}>
         <Table size="small" aria-label="a dense table">
           <TableHead>
@@ -224,15 +227,11 @@ const symbol = () => {
               <TableCell align="center">จำนวน</TableCell>
               <TableCell align="center">ราคาขาย</TableCell>
               <TableCell align="center">ยอดขาย (ประมาณ)</TableCell>
-              <TableCell align="center">กำไร (ประมาณ)</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {rows.length <= 0 ? (
               <TableRow key="loading">
-                <TableCell align="center">
-                  <Skeleton />
-                </TableCell>
                 <TableCell align="center">
                   <Skeleton />
                 </TableCell>
@@ -261,7 +260,6 @@ const symbol = () => {
                   <TableCell align="center">{row.amount}</TableCell>
                   <TableCell align="center">{row.sellPrice}</TableCell>
                   <TableCell align="center">{row.sales}</TableCell>
-                  <TableCell align="center">{row.profit}</TableCell>
                 </TableRow>
               ))
             )}
@@ -272,4 +270,4 @@ const symbol = () => {
   );
 };
 
-export default symbol;
+export default Simulate;
