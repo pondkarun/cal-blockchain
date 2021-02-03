@@ -59,16 +59,9 @@ const Simulate = ({ symbol }) => {
     const vatCost = Number((cost * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ซื้อ
 
     for (let x = 0; x < modelSave.number; x++) {
-      const buyPrice = Number(
-        (x === 0
-          ? modelSave.rate_end - rate
-          : tempDate[x - 1].buyPrice - rate
-        ).toFixed(2)
-      ); //คำนวณ ชื้อราคา
+      const buyPrice = Number((x === 0 ? modelSave.rate_end - rate : tempDate[x - 1].buyPrice - rate).toFixed(2)); //คำนวณ ชื้อราคา
       const amount = Number(((cost - vatCost) / buyPrice).toFixed(8)); //คำนวณ จำนวน
-      const sellPrice = Number(
-        (buyPrice + (buyPrice * modelSave.profit) / 100).toFixed(2)
-      ); //คำนวณ ราคาขาย
+      const sellPrice = Number((buyPrice + (buyPrice * modelSave.profit) / 100).toFixed(2)); //คำนวณ ราคาขาย
 
       const vatSellPrice = Number((amount * sellPrice * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ขาย
       const sales = Number((amount * sellPrice - vatSellPrice).toFixed(2)); //คำนวณ ยอดขาย
@@ -89,7 +82,19 @@ const Simulate = ({ symbol }) => {
     setRows(tempDate);
   };
 
-  const calculateIndex = (index) => {
+  const calculateIndex = (index, rows, model, value) => {
+    
+    rows[index][model] = Number(value);
+    if (model === "buyPrice") {
+
+    } else if (model === "cost") {
+
+    } else if (model === "sellPrice") {
+
+    }
+
+
+    setRows([...rows]);
 
   }
 
@@ -272,11 +277,8 @@ const Simulate = ({ symbol }) => {
                         <input
                           type="number"
                           className="form-control"
-                          defaultValue={row.buyPrice}
-                          onChange={(e) => {
-                            rows[index].buyPrice = Number(e.target.value);
-                            setRows([...rows]);
-                          }}
+                          value={row.buyPrice}
+                          onChange={(e) => calculateIndex(index, rows, "buyPrice", e.target.value)}
                         />
                       ) : (
                           row.buyPrice
@@ -287,13 +289,8 @@ const Simulate = ({ symbol }) => {
                         <input
                           type="number"
                           className="form-control"
-                          defaultValue={row.cost}
-                          onChange={(e) => {
-                            const vatCost = Number((e.target.value * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ซื้อ
-                            rows[index].amount = Number(((e.target.value - vatCost) / rows[index].buyPrice).toFixed(8)); //คำนวณ จำนวน
-                            rows[index].cost = Number(e.target.value);
-                            setRows([...rows]);
-                          }}
+                          value={row.cost}
+                          onChange={(e) => calculateIndex(index, rows, "cost", e.target.value)}
                         />
                       ) : (
                           row.cost
@@ -305,14 +302,8 @@ const Simulate = ({ symbol }) => {
                         <input
                           type="number"
                           className="form-control"
-                          defaultValue={row.sellPrice}
-                          onChange={(e) => {
-                            const vatSellPrice = Number((rows[index].amount * Number(e.target.value) * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ขาย
-                            rows[index].sales = Number((rows[index].amount * Number(e.target.value) - vatSellPrice).toFixed(2))
-                            rows[index].sellPrice = Number(e.target.value);
-                            rows[index].profit = Number(rows[index].sales - rows[index].cost).toFixed(2); //คำนวณ กำไร
-                            setRows([...rows]);
-                          }}
+                          value={row.sellPrice}
+                          onChange={(e) => calculateIndex(index, rows, "sellPrice", e.target.value)}
                         />
                       ) : (
                           row.sellPrice
