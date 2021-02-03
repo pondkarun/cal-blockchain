@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Skeleton } from "@material-ui/lab";
 
 import {
@@ -21,7 +21,16 @@ import {
 
 const Simulate = ({ symbol }) => {
   // console.log("symbol :>> ", symbol);
+  const [priceTrade, setspriceTrade] = useState("0")
+  useEffect(() => {
+    const binanceSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
+    binanceSocket.onmessage = (event) => {
+      const jsonData = JSON.parse(event.data)
+      // console.log('jsonData.p', jsonData.p)
+      setspriceTrade(Number(jsonData.p))
+    }
 
+  }, [])
   const [isEditTable, setIsEditTable] = useState(true);
   const [modelSave, setModelSave] = useState({
     amount: 10000,
@@ -81,7 +90,7 @@ const Simulate = ({ symbol }) => {
   };
 
   const calculateIndex = (index) => {
-    
+
   }
 
   const startSimulate = () => {
@@ -204,6 +213,10 @@ const Simulate = ({ symbol }) => {
           <Grid item md={4}></Grid>
         </Grid>
       </form>
+
+      <h3 align="left">
+        ราคา : {priceTrade} บาท
+      </h3>
 
       <h3 align="right">
         {" "}
