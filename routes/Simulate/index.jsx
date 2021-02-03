@@ -35,8 +35,9 @@ const Simulate = ({ symbol }) => {
   const [modelSave, setModelSave] = useState({
     amount: 10000,
     number: 10,
-    rate_start: 8,
-    rate_end: 9.5,
+    rate_start: 0.37000,
+    rate_end: 0.38000,
+    toFixedBuySellPrice: 5,
     profit: 2.06,
   });
 
@@ -56,16 +57,17 @@ const Simulate = ({ symbol }) => {
     let sum = 0;
     const rate = (modelSave.rate_end - modelSave.rate_start) / modelSave.number; //เรทที่ลดลง แต่ละไม้
     const cost = Number((modelSave.amount / modelSave.number).toFixed(2)); //ทุน
-    const vatCost = Number((cost * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ซื้อ
+    const vatCost = Number((cost * vat).toFixed(2)); //ค่าธรรมเนียม ซื้อ
 
     for (let x = 0; x < modelSave.number; x++) {
-      const buyPrice = Number((x === 0 ? modelSave.rate_end - rate : tempDate[x - 1].buyPrice - rate).toFixed(2)); //คำนวณ ชื้อราคา
+      const buyPrice = Number((x === 0 ? modelSave.rate_end - rate : tempDate[x - 1].buyPrice - rate).toFixed(modelSave.toFixedBuySellPrice)); //คำนวณ ชื้อราคา
       const amount = Number(((cost - vatCost) / buyPrice).toFixed(8)); //คำนวณ จำนวน
-      const sellPrice = Number((buyPrice + (buyPrice * modelSave.profit) / 100).toFixed(2)); //คำนวณ ราคาขาย
+      const sellPrice = Number((buyPrice + (buyPrice * modelSave.profit) / 100).toFixed(modelSave.toFixedBuySellPrice)); //คำนวณ ราคาขาย
 
-      const vatSellPrice = Number((amount * sellPrice * vat).toFixed(2)); //ค่าธรรมเนียม 0.25% ขาย
+      const vatSellPrice = Number((amount * sellPrice * vat).toFixed(2)); //ค่าธรรมเนียม ขาย
       const sales = Number((amount * sellPrice - vatSellPrice).toFixed(2)); //คำนวณ ยอดขาย
       const profit = Number(sales - cost).toFixed(2); //คำนวณ กำไร
+      const profitText = Number(profit).toLocaleString("en"); //คำนวณ กำไร
       tempDate.push({
         num: x + 1, //ไม้
         buyPrice, //ชื้อราคา
@@ -74,28 +76,34 @@ const Simulate = ({ symbol }) => {
         sellPrice, //ราคาขาย
         sales, //ยอดขาย
         profit, //กำไร
+        profitText, //กำไร
       });
       sum = sum + Number(profit);
     }
 
-    setSumProfit(sum.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+    setSumProfit(sum);
     setRows(tempDate);
   };
 
   const calculateIndex = (index, rows, model, value) => {
-    
+    const cost = Number((modelSave.amount / modelSave.number).toFixed(2)); //ทุน
+    const vatCost = Number((cost * vat).toFixed(2)); //ค่าธรรมเนียม ซื้อ
+
     rows[index][model] = Number(value);
-    if (model === "buyPrice") {
+    rows[index].amount = Number(((rows[index].cost - vatCost) / rows[index].buyPrice).toFixed(8)); //คำนวณ จำนวน
+    if (model !== "sellPrice")
+      rows[index].sellPrice = Number((rows[index].buyPrice + (rows[index].buyPrice * modelSave.profit) / 100).toFixed(modelSave.toFixedBuySellPrice));
 
-    } else if (model === "cost") {
-
-    } else if (model === "sellPrice") {
-
-    }
-
-
+    const vatSellPrice = Number((rows[index].amount * rows[index].sellPrice * vat).toFixed(2)); //ค่าธรรมเนียม ขาย
+    rows[index].sales = Number((rows[index].amount * rows[index].sellPrice - vatSellPrice).toFixed(2)); //คำนวณ ยอดขาย
+    rows[index].profit = Number(rows[index].sales - cost).toFixed(2);
+    rows[index].profitText = Number(rows[index].profit).toLocaleString("en");
     setRows([...rows]);
-
+    let sum = 0;
+    rows.forEach(e => {
+      sum = sum + Number(e.profit);
+    });
+    setSumProfit(sum);
   }
 
   const startSimulate = () => {
@@ -182,7 +190,22 @@ const Simulate = ({ symbol }) => {
                 </FormControl>
               </Grid>
             </Grid>
-
+            <FormControl fullWidth style={{ paddingBottom: 7 }}>
+              <InputLabel htmlFor="standard-adornment-amount">
+                ทศนิยมราคาขาย (ตำแหน่ง)
+              </InputLabel>
+              <Input
+                id="standard-adornment-amount"
+                type="number"
+                value={modelSave.toFixedBuySellPrice}
+                onChange={(event) => {
+                  setModelSave({ ...modelSave, profit: event.target.value });
+                }}
+                startAdornment={
+                  <InputAdornment position="start"> </InputAdornment>
+                }
+              />
+            </FormControl>
             <FormControl fullWidth style={{ paddingBottom: 7 }}>
               <InputLabel htmlFor="standard-adornment-amount">
                 กำไร (%)
@@ -310,7 +333,7 @@ const Simulate = ({ symbol }) => {
                         )}
                     </TableCell>
                     <TableCell align="center">{row.sales}</TableCell>
-                    <TableCell align="center">{row.profit}</TableCell>
+                    <TableCell align="center">{row.profitText}</TableCell>
                   </TableRow>
                 ))
               )}
