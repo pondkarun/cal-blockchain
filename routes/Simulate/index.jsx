@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Skeleton } from "@material-ui/lab";
+import XLSX from 'xlsx';
 
 import {
   Grid,
@@ -22,6 +23,7 @@ import {
 const Simulate = ({ symbol }) => {
   // console.log("symbol :>> ", symbol);
   const [priceTrade, setspriceTrade] = useState("0")
+  const [sumCost, setSumCost] = useState(0)
   useEffect(() => {
     const binanceSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
     binanceSocket.onmessage = (event) => {
@@ -82,6 +84,7 @@ const Simulate = ({ symbol }) => {
     }
 
     setSumProfit(sum);
+    setSumCost(cost)
     setRows(tempDate);
     setIsEditTable(true)
   };
@@ -97,20 +100,44 @@ const Simulate = ({ symbol }) => {
 
     const vatSellPrice = Number((rows[index].amount * rows[index].sellPrice * vat).toFixed(2)); //ค่าธรรมเนียม ขาย
     rows[index].sales = Number((rows[index].amount * rows[index].sellPrice - vatSellPrice).toFixed(2)); //คำนวณ ยอดขาย
-    rows[index].profit = Number(rows[index].sales - cost).toFixed(2);
+    rows[index].profit = Number(rows[index].sales - rows[index].cost).toFixed(2);
     rows[index].profitText = Number(rows[index].profit).toLocaleString("en");
     setRows([...rows]);
     let sum = 0;
+    let costSum = 0
     rows.forEach(e => {
       sum = sum + Number(e.profit);
+      costSum = costSum + Number(e.cost);
     });
+
+    setSumCost(costSum)
     setSumProfit(sum);
   }
 
   const startSimulate = () => {
-    console.log("rows :>> ", rows);
+    // console.log("rows :>> ", rows);
     setIsEditTable(false)
+    let list = rows.map(e => {
+      return {
+        id: e.num,
+        buy_price: e.buyPrice,
+        cost: e.cost,
+        sell_price: e.sellPrice,
+      }
+    })
+
+    // console.log('list :>> ', list);
+
+    let workbook = XLSX.utils.book_new();
+    let worksheet = XLSX.utils.json_to_sheet(list);
+    workbook.SheetNames.push("data");
+    workbook.Sheets["data"] = worksheet;
+    exportExcelFile(workbook);
   };
+
+  const exportExcelFile = (workbook) => {
+    return XLSX.writeFile(workbook, "rp.csv");
+  }
 
   return (
     <div>
@@ -245,12 +272,15 @@ const Simulate = ({ symbol }) => {
       <h3 align="left">
         ราคา : {priceTrade} บาท
       </h3>
-
       <h3 align="right">
-        {" "}
         {rows.length > 0
           ? `รวมกำไร (ประมาณ) : ${sumProfit.toLocaleString("en")} บาท`
-          : null}{" "}
+          : null}
+      </h3>
+      <h3 align="right">
+        {rows.length > 0
+          ? `ทุนรวม : ${sumCost.toLocaleString("en")} บาท`
+          : null}
       </h3>
       <div row="row"></div>
       <TableContainer component={Paper}>
