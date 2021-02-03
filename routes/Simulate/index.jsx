@@ -83,6 +83,7 @@ const Simulate = ({ symbol }) => {
 
     setSumProfit(sum);
     setRows(tempDate);
+    setIsEditTable(true)
   };
 
   const calculateIndex = (index, rows, model, value) => {
@@ -108,6 +109,7 @@ const Simulate = ({ symbol }) => {
 
   const startSimulate = () => {
     console.log("rows :>> ", rows);
+    setIsEditTable(false)
   };
 
   return (
@@ -224,18 +226,16 @@ const Simulate = ({ symbol }) => {
             </FormControl>
 
             <div style={{ textAlign: "center" }}>
+
               <Button variant="contained" color="primary" onClick={calculate}>
                 คำนวณ
               </Button>
 
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={startSimulate}
-              >
-                {" "}
+              <Button variant="contained" color="primary" onClick={startSimulate} >
                 เริ่ม
               </Button>
+
+
             </div>
           </Grid>
           <Grid item md={4}></Grid>
