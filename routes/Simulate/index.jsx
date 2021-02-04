@@ -123,7 +123,7 @@ const Simulate = ({ symbol }) => {
         buy_price: e.buyPrice,
         cost: e.cost,
         sell_price: e.sellPrice,
-        buy_status: false,
+        buy_status: 0,
       }
     })
 
